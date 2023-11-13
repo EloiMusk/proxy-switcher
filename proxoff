@@ -1,0 +1,40 @@
+#!/bin/bash
+
+win_user=
+node_path=
+
+unset http_proxy
+unset https_proxy
+unset no_proxy
+
+echo "toor" | sudo -S /bin/sh -c 'echo "" > /etc/apt/apt.conf.d/99proxy'
+
+echo """unset http_proxy
+unset https_proxy
+unset no_proxy""" > ~/proxy/set
+
+{
+    jsonStr=$(cat "/mnt/c/Users/$win_user/AppData/Roaming/Code/User/settings.json")
+    if [ -z "$jsonStr" ]; then
+        return
+    fi
+    res=$($node_path -p "{
+            try{
+                var json_str = JSON.parse(JSON.stringify($jsonStr))
+                if(json_str['http.proxy']){
+                    json_str['http.proxy'] = ''
+                }
+                JSON.stringify(json_str)
+            }catch{
+                JSON.stringify($jsonStr)
+            }
+        }
+    ")
+    # Check if res is not empty and not "undefined" or "null"
+    if [ -z "$res" ] || [ "$res" == "undefined" ] || [ "$res" == "null" ]; then
+        return
+    fi
+    echo $res > "/mnt/c/Users/$win_user/AppData/Roaming/Code/User/settings.json"
+    } || {
+    return
+}
